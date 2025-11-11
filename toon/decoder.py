@@ -65,12 +65,29 @@ def decode(toon_string: str, options: Optional[Dict[str, Any]] = None) -> Any:
     
     # Handle special case of top-level inline values
     stripped = toon_string.strip()
-    if stripped.startswith(LEFT_BRACKET) and stripped.endswith(RIGHT_BRACKET):
-        # Top-level array
+    if stripped.startswith(LEFT_BRACKET) and stripped.endswith(RIGHT_BRACKET) and NEWLINE not in toon_string:
+        # Top-level inline array
         return _parse_value(stripped, opts)
     elif stripped == '{}':
         # Empty object
         return {}
+    
+    # Check for top-level array header: [N]{fields}: or [N]:
+    first_line = lines[0].strip() if lines else ''
+    top_level_array_match = re.match(r'^\[(\d+)\](?:\{([^}]+)\})?' + COLON + r'\s*$', first_line)
+    if top_level_array_match:
+        count = int(top_level_array_match.group(1))
+        fields_str = top_level_array_match.group(2)
+        
+        if fields_str:
+            # Tabular array
+            fields = [f.strip() for f in fields_str.split(COMMA)]
+            result, _ = _parse_tabular_array(lines, 1, 0, count, fields, opts)
+        else:
+            # List array
+            result, _ = _parse_list_array(lines, 1, 0, count, opts)
+        
+        return result
     
     result, _ = _parse_lines(lines, 0, 0, opts)
     

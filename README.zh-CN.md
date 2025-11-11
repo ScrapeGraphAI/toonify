@@ -36,6 +36,11 @@ pip install toonify
 pip install toonify[dev]
 ```
 
+支持Pydantic：
+```bash
+pip install toonify[pydantic]
+```
+
 ## 快速开始
 
 ### Python API
@@ -78,6 +83,48 @@ cat data.json | toon -e > data.toon
 # 显示Token统计信息
 toon data.json --stats
 ```
+
+### Pydantic集成
+
+TOON支持直接从Pydantic模型转换：
+
+```python
+from pydantic import BaseModel
+from toon import encode_pydantic, decode_to_pydantic
+
+# 定义Pydantic模型
+class User(BaseModel):
+    id: int
+    name: str
+    email: str
+
+# 将Pydantic模型编码为TOON
+users = [
+    User(id=1, name='Alice', email='alice@example.com'),
+    User(id=2, name='Bob', email='bob@example.com')
+]
+
+toon = encode_pydantic(users)
+print(toon)
+# 输出：
+# [2]{id,name,email}:
+#   1,Alice,alice@example.com
+#   2,Bob,bob@example.com
+
+# 将TOON解码回Pydantic模型
+decoded_users = decode_to_pydantic(toon, User)
+assert all(isinstance(u, User) for u in decoded_users)
+```
+
+**特性：**
+- ✅ 直接从Pydantic模型转换（支持v1和v2）
+- ✅ 支持嵌套模型
+- ✅ 排除未设置、None或默认值
+- ✅ 支持字段别名
+- ✅ 解码时完全验证
+- ✅ 往返转换
+
+详见[examples/pydantic_usage.py](examples/pydantic_usage.py)。
 
 ## TOON格式规范
 
@@ -178,6 +225,57 @@ data = decode(toon_string, {
     'expand_paths': 'safe',
     'strict': False
 })
+```
+
+### `encode_pydantic(model, options=None, exclude_unset=False, exclude_none=False, exclude_defaults=False, by_alias=False)`
+
+将Pydantic模型转换为TOON字符串。
+
+**参数：**
+- `model`：Pydantic模型实例或模型实例列表
+- `options`：与`encode()`函数相同
+- `exclude_unset`：如果为True，排除未明确设置的字段
+- `exclude_none`：如果为True，排除None值字段
+- `exclude_defaults`：如果为True，排除具有默认值的字段
+- `by_alias`：如果为True，使用字段别名而不是字段名称
+
+**示例：**
+```python
+from pydantic import BaseModel
+from toon import encode_pydantic
+
+class User(BaseModel):
+    id: int
+    name: str
+    email: str | None = None
+
+user = User(id=1, name='Alice')
+toon = encode_pydantic(user, exclude_none=True)
+```
+
+### `decode_to_pydantic(toon_string, model_class, options=None)`
+
+将TOON字符串解码为Pydantic模型。
+
+**参数：**
+- `toon_string`：TOON格式字符串
+- `model_class`：要实例化的Pydantic模型类
+- `options`：与`decode()`函数相同
+
+**返回：**
+- Pydantic模型实例或实例列表（取决于输入）
+
+**示例：**
+```python
+from pydantic import BaseModel
+from toon import decode_to_pydantic
+
+class User(BaseModel):
+    id: int
+    name: str
+
+toon = "id: 1\nname: Alice"
+user = decode_to_pydantic(toon, User)
 ```
 
 ## CLI使用

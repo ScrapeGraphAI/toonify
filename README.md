@@ -40,6 +40,11 @@ For development:
 pip install toonify[dev]
 ```
 
+With Pydantic support:
+```bash
+pip install toonify[pydantic]
+```
+
 ## Quick Start
 
 ### Python API
@@ -82,6 +87,48 @@ cat data.json | toon -e > data.toon
 # Show token statistics
 toon data.json --stats
 ```
+
+### Pydantic Integration
+
+TOON supports direct conversion from Pydantic models:
+
+```python
+from pydantic import BaseModel
+from toon import encode_pydantic, decode_to_pydantic
+
+# Define Pydantic models
+class User(BaseModel):
+    id: int
+    name: str
+    email: str
+
+# Encode Pydantic models to TOON
+users = [
+    User(id=1, name='Alice', email='alice@example.com'),
+    User(id=2, name='Bob', email='bob@example.com')
+]
+
+toon = encode_pydantic(users)
+print(toon)
+# Output:
+# [2]{id,name,email}:
+#   1,Alice,alice@example.com
+#   2,Bob,bob@example.com
+
+# Decode TOON back to Pydantic models
+decoded_users = decode_to_pydantic(toon, User)
+assert all(isinstance(u, User) for u in decoded_users)
+```
+
+**Features:**
+- ✅ Direct conversion from Pydantic models (v1 and v2)
+- ✅ Support for nested models
+- ✅ Exclude unset, None, or default values
+- ✅ Field aliases support
+- ✅ Full validation on decode
+- ✅ Round-trip conversion
+
+See [examples/pydantic_usage.py](examples/pydantic_usage.py) for more examples.
 
 ## TOON Format Specification
 
@@ -182,6 +229,57 @@ data = decode(toon_string, {
     'expand_paths': 'safe',
     'strict': False
 })
+```
+
+### `encode_pydantic(model, options=None, exclude_unset=False, exclude_none=False, exclude_defaults=False, by_alias=False)`
+
+Convert Pydantic model(s) to TOON string.
+
+**Parameters:**
+- `model`: Pydantic model instance or list of model instances
+- `options`: Same as `encode()` function
+- `exclude_unset`: If True, exclude fields that were not explicitly set
+- `exclude_none`: If True, exclude fields with None values
+- `exclude_defaults`: If True, exclude fields with default values
+- `by_alias`: If True, use field aliases instead of field names
+
+**Example:**
+```python
+from pydantic import BaseModel
+from toon import encode_pydantic
+
+class User(BaseModel):
+    id: int
+    name: str
+    email: str | None = None
+
+user = User(id=1, name='Alice')
+toon = encode_pydantic(user, exclude_none=True)
+```
+
+### `decode_to_pydantic(toon_string, model_class, options=None)`
+
+Decode TOON string to Pydantic model(s).
+
+**Parameters:**
+- `toon_string`: TOON formatted string
+- `model_class`: Pydantic model class to instantiate
+- `options`: Same as `decode()` function
+
+**Returns:**
+- Pydantic model instance or list of instances (depending on input)
+
+**Example:**
+```python
+from pydantic import BaseModel
+from toon import decode_to_pydantic
+
+class User(BaseModel):
+    id: int
+    name: str
+
+toon = "id: 1\nname: Alice"
+user = decode_to_pydantic(toon, User)
 ```
 
 ## CLI Usage
