@@ -14,8 +14,10 @@ try:
     _PYDANTIC_AVAILABLE = True
 except ImportError:
     _PYDANTIC_AVAILABLE = False
-    encode_pydantic = None
-    decode_to_pydantic = None
+    def encode_pydantic(*args, **kwargs):
+        raise ImportError("encode_pydantic requires pydantic to be installed. Please install pydantic to use this feature.")
+    def decode_to_pydantic(*args, **kwargs):
+        raise ImportError("decode_to_pydantic requires pydantic to be installed. Please install pydantic to use this feature.")
 
 __version__ = '1.0.0'
 __all__ = [
