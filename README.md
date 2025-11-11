@@ -1,5 +1,7 @@
 # TOON (Token-Oriented Object Notation)
 
+[English](README.md) | [中文](README.zh-CN.md)
+
 A compact, human-readable serialization format designed for passing structured data to Large Language Models with significantly reduced token usage.
 
 [![Python Version](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
