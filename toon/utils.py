@@ -1,5 +1,6 @@
 """Utility functions for the TOON library."""
 from typing import Any, Optional
+from datetime import datetime, date
 from .constants import (
     QUOTE, BACKSLASH, NEWLINE, COMMA, TAB, PIPE,
     TRUE_LITERAL, FALSE_LITERAL, NULL_LITERAL,
@@ -129,15 +130,15 @@ def quote_string(value: str) -> str:
 
 def is_primitive(value: Any) -> bool:
     """
-    Check if a value is a primitive type (str, int, float, bool, None).
-    
+    Check if a value is a primitive type (str, int, float, bool, None, datetime, date).
+
     Args:
         value: Value to check
-        
+
     Returns:
         True if primitive, False otherwise
     """
-    return isinstance(value, (str, int, float, bool, type(None)))
+    return isinstance(value, (str, int, float, bool, type(None), datetime, date))
 
 
 def is_array_of_objects(value: Any) -> bool:
@@ -225,10 +226,10 @@ def parse_number(value: str) -> Any:
 def parse_literal(value: str) -> Any:
     """
     Parse a string as a boolean, null, or number literal.
-    
+
     Args:
         value: String to parse
-        
+
     Returns:
         Parsed value or original string if not a literal
     """
@@ -241,3 +242,49 @@ def parse_literal(value: str) -> Any:
         return None
     else:
         return parse_number(value)
+
+
+def format_float(value: float) -> str:
+    """
+    Format a float without unnecessary scientific notation.
+
+    Suppresses scientific notation for numbers in a reasonable range,
+    making the output more human-readable.
+
+    Args:
+        value: Float value to format
+
+    Returns:
+        Formatted string representation
+    """
+    if value == 0:
+        return '0'
+
+    # Check if value would use scientific notation
+    str_repr = str(value)
+    if 'e' not in str_repr.lower():
+        # Already in decimal format, but strip unnecessary trailing zeros
+        if '.' in str_repr:
+            return str_repr.rstrip('0').rstrip('.')
+        return str_repr
+
+    abs_val = abs(value)
+
+    # Only suppress scientific notation for reasonable ranges
+    # Keep scientific notation for very large or very small numbers
+    if abs_val < 1e-100 or abs_val >= 1e100:
+        return str_repr
+
+    # Format with fixed-point notation
+    # Use enough precision to preserve the value
+    if abs_val >= 1:
+        # For numbers >= 1, use minimal decimal places
+        formatted = f'{value:.10f}'
+    else:
+        # For numbers < 1, use more precision
+        formatted = f'{value:.15f}'
+
+    # Strip trailing zeros and unnecessary decimal point
+    formatted = formatted.rstrip('0').rstrip('.')
+
+    return formatted
