@@ -183,7 +183,9 @@ def decode_to_pydantic(toon_string: str, model_class: type, options: Optional[Di
     
     # Convert to Pydantic model(s)
     if isinstance(data, list):
-        return [model_class(**item) if isinstance(item, dict) else item for item in data]
+        if not all(isinstance(item, dict) for item in data):
+            raise ValueError("All items in the decoded list must be dicts to convert to Pydantic models")
+        return [model_class(**item) for item in data]
     elif isinstance(data, dict):
         return model_class(**data)
     else:
