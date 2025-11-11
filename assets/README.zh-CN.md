@@ -1,6 +1,6 @@
 # TOON（面向Token的对象表示法）
 
-[English](README.md) | [中文](README.zh-CN.md)
+[English](../README.md) | [中文](README.zh-CN.md)
 
 一种紧凑、人类可读的序列化格式，专为向大型语言模型传递结构化数据而设计，显著减少Token使用量。
 
@@ -124,7 +124,7 @@ assert all(isinstance(u, User) for u in decoded_users)
 - ✅ 解码时完全验证
 - ✅ 往返转换
 
-详见[examples/pydantic_usage.py](examples/pydantic_usage.py)。
+详见[examples/pydantic_usage.py](../examples/pydantic_usage.py)。
 
 ## TOON格式规范
 
@@ -436,7 +436,7 @@ TOON通常实现：
 
 ## 许可证
 
-MIT许可证 - 详情请参见[LICENSE](LICENSE)文件。
+MIT许可证 - 详情请参见[LICENSE](../LICENSE)文件。
 
 ## 致谢
 

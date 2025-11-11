@@ -4,7 +4,7 @@
 
 # TOON (Token-Oriented Object Notation)
 
-[English](README.md) | [中文](README.zh-CN.md)
+[English](README.md) | [中文](assets/README.zh-CN.md)
 
 A compact, human-readable serialization format designed for passing structured data to Large Language Models with significantly reduced token usage.
 
