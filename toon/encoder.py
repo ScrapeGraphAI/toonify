@@ -1,5 +1,6 @@
 """TOON encoder - convert Python objects to TOON format."""
 from typing import Any, Dict, List, Optional
+from datetime import datetime, date
 from .constants import (
     COMMA, TAB, PIPE, COLON, NEWLINE,
     DEFAULT_DELIMITER, DEFAULT_INDENT,
@@ -9,7 +10,7 @@ from .constants import (
 )
 from .utils import (
     needs_quoting, quote_string, is_primitive,
-    is_uniform_array_of_objects, get_indent
+    is_uniform_array_of_objects, get_indent, format_float
 )
 
 
@@ -86,6 +87,18 @@ def _encode_value(value: Any, level: int, opts: EncoderOptions) -> str:
         return 'null'
     elif isinstance(value, bool):
         return 'true' if value else 'false'
+    elif isinstance(value, datetime):
+        # Convert datetime to ISO 8601 string
+        iso_string = value.isoformat()
+        if needs_quoting(iso_string):
+            return quote_string(iso_string)
+        return iso_string
+    elif isinstance(value, date):
+        # Convert date to ISO 8601 date string
+        iso_string = value.isoformat()
+        if needs_quoting(iso_string):
+            return quote_string(iso_string)
+        return iso_string
     elif isinstance(value, (int, float)):
         # Handle special float values
         if isinstance(value, float):
@@ -93,6 +106,8 @@ def _encode_value(value: Any, level: int, opts: EncoderOptions) -> str:
                 return 'null'
             elif value == float('inf') or value == float('-inf'):
                 return 'null'
+            # Use format_float to suppress scientific notation
+            return format_float(value)
         return str(value)
     elif isinstance(value, str):
         if needs_quoting(value):
@@ -103,7 +118,7 @@ def _encode_value(value: Any, level: int, opts: EncoderOptions) -> str:
     elif isinstance(value, dict):
         return _encode_object(value, level, opts)
     else:
-        # Handle other types (dates, etc.) as null
+        # Handle other types as null
         return 'null'
 
 
@@ -193,8 +208,12 @@ def _encode_primitive_array(arr: list, opts: EncoderOptions) -> str:
         elif isinstance(item, bool):
             encoded_values.append('true' if item else 'false')
         elif isinstance(item, (int, float)):
-            if isinstance(item, float) and (item != item or item == float('inf') or item == float('-inf')):
-                encoded_values.append('null')
+            if isinstance(item, float):
+                if item != item or item == float('inf') or item == float('-inf'):
+                    encoded_values.append('null')
+                else:
+                    # Use format_float to suppress scientific notation
+                    encoded_values.append(format_float(item))
             else:
                 encoded_values.append(str(item))
         elif isinstance(item, str):
@@ -202,19 +221,27 @@ def _encode_primitive_array(arr: list, opts: EncoderOptions) -> str:
                 encoded_values.append(quote_string(item))
             else:
                 encoded_values.append(item)
-    
+
     return f'[{opts.delimiter.join(encoded_values)}]'
 
 
 def _encode_tabular_array(arr: list, fields: list, level: int, opts: EncoderOptions, key: Optional[str] = None) -> str:
     """Encode a uniform array of objects in tabular format."""
     indent = get_indent(level, opts.indent)
-    
-    # Header: [N]{field1,field2,...}: or key[N]{field1,field2,...}:
+
+    # Delimiter indicator: show delimiter in header for non-comma
+    delimiter_indicator = ''
+    if opts.delimiter == TAB:
+        delimiter_indicator = '\t'
+    elif opts.delimiter == PIPE:
+        delimiter_indicator = '|'
+    # Comma is default, no indicator needed
+
+    # Header: [N]{field1,field2,...}: or key[N\t]{field1,field2,...}: or key[N|]{field1,field2,...}:
     if key:
-        header = f'{indent}{key}[{len(arr)}]{LEFT_BRACE}{COMMA.join(fields)}{RIGHT_BRACE}{COLON}'
+        header = f'{indent}{key}[{len(arr)}{delimiter_indicator}]{LEFT_BRACE}{COMMA.join(fields)}{RIGHT_BRACE}{COLON}'
     else:
-        header = f'[{len(arr)}]{LEFT_BRACE}{COMMA.join(fields)}{RIGHT_BRACE}{COLON}'
+        header = f'[{len(arr)}{delimiter_indicator}]{LEFT_BRACE}{COMMA.join(fields)}{RIGHT_BRACE}{COLON}'
     
     lines = [header]
     
@@ -238,9 +265,24 @@ def _encode_primitive_value(value: Any) -> str:
         return 'null'
     elif isinstance(value, bool):
         return 'true' if value else 'false'
+    elif isinstance(value, datetime):
+        # Convert datetime to ISO 8601 string
+        iso_string = value.isoformat()
+        if needs_quoting(iso_string):
+            return quote_string(iso_string)
+        return iso_string
+    elif isinstance(value, date):
+        # Convert date to ISO 8601 date string
+        iso_string = value.isoformat()
+        if needs_quoting(iso_string):
+            return quote_string(iso_string)
+        return iso_string
     elif isinstance(value, (int, float)):
-        if isinstance(value, float) and (value != value or value == float('inf') or value == float('-inf')):
-            return 'null'
+        if isinstance(value, float):
+            if value != value or value == float('inf') or value == float('-inf'):
+                return 'null'
+            # Use format_float to suppress scientific notation
+            return format_float(value)
         return str(value)
     elif isinstance(value, str):
         if needs_quoting(value):
@@ -253,22 +295,31 @@ def _encode_primitive_value(value: Any) -> str:
 def _encode_list_array(arr: list, level: int, opts: EncoderOptions, key: Optional[str] = None) -> str:
     """Encode a non-uniform array in list format."""
     indent = get_indent(level, opts.indent)
-    
+
     # Header: [N]: or key[N]:
     if key:
         header = f'{indent}{key}[{len(arr)}]{COLON}'
     else:
         header = f'[{len(arr)}]{COLON}'
-    
+
     lines = [header]
-    
-    # Items: indented encoded values
+
+    # Items: indented encoded values with dash markers
     for item in arr:
-        encoded = _encode_value(item, level + 1, opts)
-        if NEWLINE in encoded:
-            lines.append(encoded)
+        if isinstance(item, dict) and item:
+            # Nested object: encode at level + 2 for proper subsequent line indentation
+            encoded = _encode_value(item, level + 2, opts)
+            encoded_lines = encoded.split(NEWLINE)
+            # First line: strip leading indent and add dash
+            first_line = encoded_lines[0].lstrip()
+            lines.append(f'{indent}  - {first_line}')
+            # Subsequent lines: keep as-is (already properly indented)
+            for line in encoded_lines[1:]:
+                lines.append(line)
         else:
-            lines.append(f'{indent}  {encoded}')
+            # Simple value: encode and add dash marker
+            encoded = _encode_value(item, level + 1, opts)
+            lines.append(f'{indent}  - {encoded}')
     
     return NEWLINE.join(lines)
 

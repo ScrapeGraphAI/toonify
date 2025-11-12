@@ -108,10 +108,11 @@ def test_decode_tabular_array():
 
 def test_decode_tabular_array_with_tab():
     """Test decoding tabular array with tab delimiter."""
-    toon = """users[2]{id,name}:
+    # Tab delimiter should have \t indicator in header
+    toon = """users[2\t]{id,name}:
   1\tAlice
   2\tBob"""
-    
+
     result = decode(toon)
     
     expected = {
@@ -248,5 +249,354 @@ def test_decode_quoted_field_values():
             {'id': 2, 'description': 'Normal item'}
         ]
     }
-    
+
     assert result == expected
+
+
+def test_decode_tabular_array_with_tab_indicator():
+    """Test decoding tabular array with tab delimiter indicator in header."""
+    toon = """users[2\t]{id,name}:
+  1\tAlice
+  2\tBob"""
+
+    result = decode(toon)
+
+    expected = {
+        'users': [
+            {'id': 1, 'name': 'Alice'},
+            {'id': 2, 'name': 'Bob'}
+        ]
+    }
+
+    assert result == expected
+
+
+def test_decode_tabular_array_with_pipe_indicator():
+    """Test decoding tabular array with pipe delimiter indicator in header."""
+    toon = """products[2|]{sku,price}:
+  A001|29.99
+  B002|49.99"""
+
+    result = decode(toon)
+
+    expected = {
+        'products': [
+            {'sku': 'A001', 'price': 29.99},
+            {'sku': 'B002', 'price': 49.99}
+        ]
+    }
+
+    assert result == expected
+
+
+def test_decode_tabular_array_comma_no_indicator():
+    """Test decoding tabular array without delimiter indicator uses comma default."""
+    toon = """items[2]{code,count}:
+  X,5
+  Y,10"""
+
+    result = decode(toon)
+
+    expected = {
+        'items': [
+            {'code': 'X', 'count': 5},
+            {'code': 'Y', 'count': 10}
+        ]
+    }
+
+    assert result == expected
+
+
+def test_decode_list_array_with_dash_markers():
+    """Test decoding list array with dash markers."""
+    toon = """items[3]:
+  - apple
+  - banana
+  - cherry"""
+
+    result = decode(toon)
+
+    expected = {
+        'items': ['apple', 'banana', 'cherry']
+    }
+
+    assert result == expected
+
+
+def test_decode_mixed_types_with_dash_markers():
+    """Test decoding mixed types array with dash markers."""
+    toon = """mixed[3]:
+  - string value
+  - 42
+  - key: value"""
+
+    result = decode(toon)
+
+    expected = {
+        'mixed': ['string value', 42, {'key': 'value'}]
+    }
+
+    assert result == expected
+
+
+def test_decode_datetime_string():
+    """Test decoding datetime ISO strings."""
+    toon = """created: "2024-01-01T12:30:45"
+updated: "2024-06-15T09:00:00\""""
+
+    result = decode(toon)
+
+    expected = {
+        'created': '2024-01-01T12:30:45',
+        'updated': '2024-06-15T09:00:00'
+    }
+
+    assert result == expected
+
+
+def test_decode_scientific_notation():
+    """Test decoding numbers in scientific notation."""
+    toon = """small: 1e-06
+smaller: 1e-07
+large: 1.5e+16
+very_large: 1.23e20
+normal: 3.14159"""
+
+    result = decode(toon)
+
+    expected = {
+        'small': 1e-06,
+        'smaller': 1e-07,
+        'large': 1.5e+16,
+        'very_large': 1.23e20,
+        'normal': 3.14159
+    }
+
+    assert result == expected
+
+
+def test_decode_decimal_notation():
+    """Test decoding numbers in decimal notation (no scientific)."""
+    toon = """small: 0.000001
+smaller: 0.0000001
+large: 15000000000000000
+normal: 3.14159
+integer: 42"""
+
+    result = decode(toon)
+
+    expected = {
+        'small': 0.000001,
+        'smaller': 0.0000001,
+        'large': 15000000000000000.0,
+        'normal': 3.14159,
+        'integer': 42
+    }
+
+    assert result == expected
+
+
+def test_decode_float_array_with_scientific():
+    """Test decoding arrays with scientific notation numbers."""
+    toon = """values: [1e-06,1e-07,1.5e+16,3.14159]"""
+
+    result = decode(toon)
+
+    expected = {
+        'values': [1e-06, 1e-07, 1.5e+16, 3.14159]
+    }
+
+    assert result == expected
+
+
+def test_decode_root_inline_array():
+    """Test decoding root-level inline array."""
+    toon = "[1,2,3,4,5]"
+
+    result = decode(toon)
+
+    expected = [1, 2, 3, 4, 5]
+
+    assert result == expected
+
+
+def test_decode_root_tabular_array():
+    """Test decoding root-level tabular array."""
+    toon = """[3]{id,name}:
+  1,Alice
+  2,Bob
+  3,Charlie"""
+
+    result = decode(toon)
+
+    expected = [
+        {'id': 1, 'name': 'Alice'},
+        {'id': 2, 'name': 'Bob'},
+        {'id': 3, 'name': 'Charlie'}
+    ]
+
+    assert result == expected
+
+
+def test_decode_root_list_array():
+    """Test decoding root-level list array."""
+    toon = """[4]:
+  - 1
+  - text
+  - nested: object
+  - [1,2,3]"""
+
+    result = decode(toon)
+
+    expected = [
+        1,
+        'text',
+        {'nested': 'object'},
+        [1, 2, 3]
+    ]
+
+    assert result == expected
+
+
+def test_decode_4space_indent():
+    """Test auto-detecting 4-space indentation."""
+    toon = """user:
+    name: Alice
+    age: 30
+    profile:
+        city: NYC
+        country: USA"""
+
+    result = decode(toon)
+
+    expected = {
+        'user': {
+            'name': 'Alice',
+            'age': 30,
+            'profile': {
+                'city': 'NYC',
+                'country': 'USA'
+            }
+        }
+    }
+
+    assert result == expected
+
+
+def test_decode_explicit_indent_override():
+    """Test explicitly specifying indent size."""
+    # 3-space indent (unusual but should work with explicit option)
+    toon = """data:
+   value: 123
+   nested:
+      item: test"""
+
+    result = decode(toon, {'indent': 3})
+
+    expected = {
+        'data': {
+            'value': 123,
+            'nested': {
+                'item': 'test'
+            }
+        }
+    }
+
+    assert result == expected
+
+
+def test_decode_array_with_custom_indent():
+    """Test decoding array with custom indentation."""
+    toon = """users[2]{id,name}:
+    1,Alice
+    2,Bob"""
+
+    result = decode(toon)
+
+    expected = {
+        'users': [
+            {'id': 1, 'name': 'Alice'},
+            {'id': 2, 'name': 'Bob'}
+        ]
+    }
+
+    assert result == expected
+
+
+def test_decode_strict_mode_correct_count():
+    """Test strict mode with correct array count."""
+    toon = """users[2]{id,name}:
+  1,Alice
+  2,Bob"""
+
+    result = decode(toon, {'strict': True})
+
+    expected = {
+        'users': [
+            {'id': 1, 'name': 'Alice'},
+            {'id': 2, 'name': 'Bob'}
+        ]
+    }
+
+    assert result == expected
+
+
+def test_decode_strict_mode_too_few_items():
+    """Test strict mode raises error when array has fewer items than declared."""
+    toon = """users[3]{id,name}:
+  1,Alice
+  2,Bob"""
+
+    try:
+        decode(toon, {'strict': True})
+        assert False, 'Should have raised ValueError'
+    except ValueError as e:
+        assert 'Array length mismatch' in str(e)
+        assert 'expected 3, got 2' in str(e)
+
+
+def test_decode_non_strict_mode_too_few_items():
+    """Test non-strict mode allows fewer items than declared."""
+    toon = """users[5]{id,name}:
+  1,Alice
+  2,Bob"""
+
+    result = decode(toon, {'strict': False})
+
+    expected = {
+        'users': [
+            {'id': 1, 'name': 'Alice'},
+            {'id': 2, 'name': 'Bob'}
+        ]
+    }
+
+    assert result == expected
+
+
+def test_decode_strict_mode_list_array():
+    """Test strict mode with list array."""
+    toon = """items[2]:
+  - item1
+  - item2"""
+
+    result = decode(toon, {'strict': True})
+
+    expected = {
+        'items': ['item1', 'item2']
+    }
+
+    assert result == expected
+
+
+def test_decode_strict_mode_list_array_mismatch():
+    """Test strict mode raises error for list array length mismatch."""
+    toon = """items[4]:
+  - item1
+  - item2"""
+
+    try:
+        decode(toon, {'strict': True})
+        assert False, 'Should have raised ValueError'
+    except ValueError as e:
+        assert 'Array length mismatch' in str(e)
+        assert 'expected 4, got 2' in str(e)
