@@ -1,3 +1,10 @@
+## [1.0.1](https://github.com/ScrapeGraphAI/toonify/compare/v1.0.0...v1.0.1) (2025-11-12)
+
+
+### Bug Fixes
+
+* release file ([33fc5ff](https://github.com/ScrapeGraphAI/toonify/commit/33fc5ff000f1dea80aaeec4d02282dc406e0f9bc))
+
 ## 1.0.0 (2025-11-12)
 
 
