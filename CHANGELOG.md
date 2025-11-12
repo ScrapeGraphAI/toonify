@@ -1,3 +1,10 @@
+## [1.2.0](https://github.com/ScrapeGraphAI/toonify/compare/v1.1.1...v1.2.0) (2025-11-12)
+
+
+### Features
+
+* add benchmarks ([4e86247](https://github.com/ScrapeGraphAI/toonify/commit/4e86247aad89e8b7eac77a69fef9f73e8a8e3451))
+
 ## [1.1.1](https://github.com/ScrapeGraphAI/toonify/compare/v1.1.0...v1.1.1) (2025-11-12)
 
 
