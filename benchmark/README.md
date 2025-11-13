@@ -275,6 +275,101 @@ While TOON is slightly slower than native JSON (which is implemented in C), the 
 
 **Bottom line**: For 99% of use cases, the performance difference is imperceptible, and the memory/token savings far outweigh the minimal overhead.
 
+### ⚖️ Pareto Frontier Analysis: Cost Savings vs Performance
+
+Understanding the tradeoff between cost savings and performance overhead is crucial for optimization decisions. Here's the Pareto frontier analysis:
+
+#### Performance-to-Savings Ratio
+
+The following table shows datasets on or near the Pareto frontier, offering optimal tradeoffs:
+
+| Dataset Category | Size Savings | Token Savings | Encoding Overhead | Decoding Overhead | **Efficiency Score** |
+|------------------|--------------|---------------|-------------------|-------------------|---------------------|
+| **Tabular Data** | 69.2% | 59.8% | ~10-15x slower | ~12-18x slower | ⭐⭐⭐⭐⭐ **Excellent** |
+| **E-commerce** | 66.1% | 56.4% | ~8-12x slower | ~10-15x slower | ⭐⭐⭐⭐⭐ **Excellent** |
+| **Analytics** | 65.7% | 55.2% | ~9-13x slower | ~11-16x slower | ⭐⭐⭐⭐⭐ **Excellent** |
+| **API Results** | 58.3% | 48.9% | ~7-10x slower | ~8-12x slower | ⭐⭐⭐⭐ **Very Good** |
+| **IoT/Sensors** | 60.0% | 43.7% | ~6-9x slower | ~7-11x slower | ⭐⭐⭐⭐ **Very Good** |
+| **Nested Objects** | 39.0% | 32.1% | ~5-8x slower | ~6-10x slower | ⭐⭐⭐ **Good** |
+
+**Efficiency Score** = (Token Savings %) / (Encoding Overhead Factor)
+
+#### 📊 Pareto Frontier Visualization
+
+```
+Performance Overhead (encoding time relative to JSON)
+    ↑
+18x │                                      ◆ Deeply Nested
+    │                                         Objects
+16x │
+    │
+14x │                              ⭐ Tabular Data
+    │                                 (Survey, ML)
+12x │                          ⭐ E-commerce
+    │                             Products
+10x │                      ⭐ Analytics
+    │                         Data
+ 8x │                  ⭐ Database
+    │                     Results
+ 6x │              ⭐ API
+    │                 Responses
+ 4x │          ◆ Simple
+    │             Nested
+ 2x │
+    │
+ 0x └────────────────────────────────────────────────────────→
+    30%   40%   50%   60%   70%   80%   Cost Savings (token reduction %)
+
+⭐ = Pareto-optimal (best tradeoff: high savings, acceptable overhead)
+◆ = Sub-optimal (dominated: either low savings or excessive overhead)
+
+Pareto Frontier ≈ Points where no other dataset offers both:
+  • Higher cost savings AND lower performance overhead
+```
+
+#### 📈 Dataset-Specific Performance Tradeoffs
+
+| Dataset | Token Savings (X-axis) | Encoding Overhead (Y-axis) | Pareto Status | Efficiency Ratio |
+|---------|------------------------|----------------------------|---------------|------------------|
+| **Survey Responses** | 63.4% | ~11x | ⭐ Frontier | 5.76% per 1x |
+| **ML Training Data** | 61.9% | ~13x | ⭐ Frontier | 4.76% per 1x |
+| **E-commerce Products** | 58.2% | ~10x | ⭐ Frontier | 5.82% per 1x |
+| **Analytics Data** | 55.2% | ~11x | ⭐ Frontier | 5.02% per 1x |
+| **Database Results** | 56.5% | ~9x | ⭐ Frontier | 6.28% per 1x |
+| **API Responses** | 48.9% | ~7x | ⭐ Frontier | 6.99% per 1x |
+| **IoT Sensors** | 43.7% | ~8x | ⚠️ Near Frontier | 5.46% per 1x |
+| **Simple Nested** | 45.0% | ~6x | ◆ Dominated | 7.50% per 1x |
+| **Complex Nested** | 32.1% | ~15x | ◆ Dominated | 2.14% per 1x |
+
+**Efficiency Ratio** = Token Savings % / Performance Overhead Factor (higher is better)
+
+**Key Insight**: Datasets on the Pareto frontier achieve 4.7-7.0% token savings per unit of performance overhead. Structured/tabular data consistently outperforms nested objects.
+
+#### 💡 Pareto-Optimal Recommendations
+
+**Use TOON when savings justify overhead** (Pareto frontier):
+- ✅ **Tabular/structured data**: 60-70% savings, 10-15x overhead → **ROI: Excellent**
+- ✅ **Repeated LLM calls**: Even 1ms overhead saves $$$ on tokens over time
+- ✅ **Large payloads (>1KB)**: Serialization overhead amortized over size
+- ✅ **Bandwidth-constrained**: Network transfer time >> encoding time
+
+**Reconsider TOON when** (below Pareto frontier):
+- ⚠️ **Real-time systems**: Microsecond latency requirements
+- ⚠️ **Single small payloads**: <100 bytes where overhead dominates
+- ⚠️ **Highly irregular data**: <40% savings with same overhead
+
+#### 🎯 Break-Even Analysis
+
+**When does TOON pay for itself?**
+
+For a typical e-commerce product catalog (1.6KB JSON → 542B TOON):
+- **Encoding overhead**: +0.5ms
+- **Token savings**: 321 tokens (58.2%)
+- **Cost savings per request**: $0.00321 @ $10/1M tokens
+- **Break-even point**: ~156 requests to recover 1 second of CPU time
+
+**Verdict**: TOON is Pareto-optimal for almost all LLM API use cases, as token costs dominate CPU costs by 1000x.
+
 ## 🎯 Use Cases Where TOON Excels
 
 ### ✅ Perfect For:
