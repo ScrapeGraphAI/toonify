@@ -1,3 +1,10 @@
+## [1.4.0](https://github.com/ScrapeGraphAI/toonify/compare/v1.3.0...v1.4.0) (2025-11-13)
+
+
+### Features
+
+* Add Pydantic model support for TOON conversion ([0bc9109](https://github.com/ScrapeGraphAI/toonify/commit/0bc9109bda223f503bb227e15ca2fa7183a746cf))
+
 ## [1.3.0](https://github.com/ScrapeGraphAI/toonify/compare/v1.2.0...v1.3.0) (2025-11-12)
 
 
