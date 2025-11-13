@@ -2,6 +2,8 @@
 
 This benchmark suite demonstrates the **MASSIVE memory and token savings** achieved by using TOON (Token-Oriented Object Notation) compared to JSON for structured data.
 
+**NEW:** TOON now supports direct conversion from [Pydantic models](../examples/pydantic_usage.py) with `encode_pydantic()` and `decode_to_pydantic()` functions!
+
 ## 🚀 HEADLINE RESULTS
 
 **Tested across 50 diverse, real-world datasets:**
@@ -116,6 +118,9 @@ pip install -e .
 
 # tiktoken is required for token counting
 pip install tiktoken
+
+# Pydantic is optional but recommended for model validation
+pip install pydantic
 ```
 
 ### Run All Benchmarks
@@ -301,7 +306,8 @@ All benchmark code is open source and can be reviewed in this directory.
 ## 📚 Additional Resources
 
 - [TOON Format Specification](https://github.com/toon-format/toon)
-- [Main README](../README.md)
+- [Main README](../README.md) - Includes Pydantic integration documentation
+- [Pydantic Examples](../examples/pydantic_usage.py) - Direct conversion from Pydantic models
 - [Python Package](https://pypi.org/project/toonify/)
 
 ## 🤝 Contributing

@@ -1,6 +1,10 @@
+<p align="center">
+  <img src="toonify.png" alt="Toonify Logo" width="400">
+</p>
+
 # TOON（面向Token的对象表示法）
 
-[English](../README.md) | [中文](README.zh-CN.md)
+[English](../README.md) | [中文](README.zh-CN.md) | [한국어](README.ko.md)
 
 一种紧凑、人类可读的序列化格式，专为向大型语言模型传递结构化数据而设计，显著减少Token使用量。
 
@@ -427,7 +431,7 @@ python examples/advanced_features.py
 
 **💰 成本影响：** 按GPT-4定价计算，TOON每百万次API请求**节省$2,147**，每十亿Token**节省$5,408**。
 
-**[📊 查看完整基准测试结果 →](benchmark/RESULTS.md)**
+**[📊 查看完整基准测试结果 →](../benchmark/RESULTS.md)**
 
 ## 贡献
 
