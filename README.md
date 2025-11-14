@@ -435,8 +435,9 @@ python examples/advanced_features.py
 
 ## Contributing
 
-Contributions are welcome! Please:
+Contributions are welcome! We appreciate bug fixes, feature additions, documentation improvements, and more.
 
+**Quick Start:**
 1. Fork the repository
 2. Create a feature branch (`git checkout -b feature/amazing-feature`)
 3. Make your changes with tests
@@ -444,6 +445,8 @@ Contributions are welcome! Please:
 5. Commit your changes (`git commit -m 'Add amazing feature'`)
 6. Push to the branch (`git push origin feature/amazing-feature`)
 7. Open a Pull Request
+
+For detailed guidelines, please see our [**Contributing Guide**](CONTRIBUTING.md).
 
 ## License
 
