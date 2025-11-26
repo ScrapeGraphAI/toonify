@@ -1,3 +1,10 @@
+## [1.5.1](https://github.com/ScrapeGraphAI/toonify/compare/v1.5.0...v1.5.1) (2025-11-26)
+
+
+### Bug Fixes
+
+* **ci:** correct workflow paths from scrapegraphai to toon ([bd77a82](https://github.com/ScrapeGraphAI/toonify/commit/bd77a82edb41ecd7df461468e65ef0d20a6c51b7))
+
 ## [1.5.0](https://github.com/ScrapeGraphAI/toonify/compare/v1.4.0...v1.5.0) (2025-11-20)
 
 
