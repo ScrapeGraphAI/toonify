@@ -11,6 +11,19 @@ try:
 except ImportError:
     TIKTOKEN_AVAILABLE = False
 
+try:
+    from .kaggle import (
+        is_kaggle_slug,
+        download_dataset,
+        find_best_csv,
+        csv_to_records,
+        parse_croissant,
+        croissant_to_summary,
+    )
+    KAGGLE_AVAILABLE = True
+except ImportError:
+    KAGGLE_AVAILABLE = False
+
 from . import encode, decode
 
 
@@ -104,18 +117,27 @@ def main():
 Examples:
   # Encode JSON file to TOON
   toon input.json -o output.toon
-  
+
   # Decode TOON file to JSON
   toon input.toon -o output.json
-  
+
   # Pipe JSON and encode to TOON
   echo '{"key": "value"}' | toon -e
-  
+
   # Force decode mode with custom delimiter
   toon input.txt -d --delimiter tab
-  
+
   # Show token statistics
   toon input.json --stats
+
+  # Download Kaggle dataset and convert to TOON
+  toon username/dataset-name --kaggle --stats
+
+  # Select specific file from Kaggle dataset
+  toon username/dataset-name --kaggle --file data.csv
+
+  # Parse Croissant metadata to see dataset schema
+  toon metadata.json --croissant
         """
     )
     
@@ -177,13 +199,133 @@ Examples:
         default='off',
         help='Path expansion mode (decode only, default: off)'
     )
-    
+    parser.add_argument(
+        '--kaggle',
+        action='store_true',
+        help='Treat input as Kaggle dataset slug (e.g., username/dataset-name)'
+    )
+    parser.add_argument(
+        '--croissant',
+        action='store_true',
+        help='Parse input as Croissant (ML Commons) metadata and show schema'
+    )
+    parser.add_argument(
+        '--file', '-f',
+        dest='select_file',
+        help='Select specific file from Kaggle dataset (use with --kaggle)'
+    )
+
     args = parser.parse_args()
     
     # Validate arguments
     if args.encode and args.decode:
         parser.error('Cannot specify both --encode and --decode')
-    
+
+    # Handle Kaggle dataset download
+    if args.kaggle or (KAGGLE_AVAILABLE and args.input and is_kaggle_slug(args.input)):
+        if not KAGGLE_AVAILABLE:
+            print('Error: Kaggle support requires the kaggle package. '
+                  'Install with: pip install kaggle', file=sys.stderr)
+            return 1
+
+        try:
+            print(f'Downloading Kaggle dataset: {args.input}', file=sys.stderr)
+            files = download_dataset(args.input)
+
+            # Find the target file
+            if args.select_file:
+                target = next(
+                    (f for f in files if args.select_file in f.name),
+                    None
+                )
+                if not target:
+                    print(f'Error: No file matching "{args.select_file}" in dataset',
+                          file=sys.stderr)
+                    print(f'Available files: {[f.name for f in files]}', file=sys.stderr)
+                    return 1
+            else:
+                target = find_best_csv(files)
+                if not target:
+                    # Try JSON files
+                    json_files = [f for f in files if f.suffix.lower() == '.json']
+                    target = json_files[0] if json_files else None
+
+                if not target:
+                    print('Error: No CSV or JSON files found in dataset', file=sys.stderr)
+                    return 1
+
+            print(f'Using: {target.name}', file=sys.stderr)
+
+            # Read and convert
+            content = target.read_text(encoding='utf-8', errors='replace')
+
+            if target.suffix.lower() == '.csv':
+                data = csv_to_records(content)
+            else:
+                data = json.loads(content)
+
+            # Encode to TOON
+            options = {
+                'delimiter': args.delimiter,
+                'indent': args.indent,
+                'key_folding': args.key_folding,
+            }
+            if args.flatten_depth is not None:
+                options['flatten_depth'] = args.flatten_depth
+
+            output_content = encode(data, options)
+            input_content = json.dumps(data)  # For stats comparison
+
+            # Show statistics if requested
+            if args.stats:
+                input_tokens = count_tokens(input_content)
+                output_tokens = count_tokens(output_content)
+
+                print(f'Input (JSON):  {len(input_content)} bytes', file=sys.stderr)
+                print(f'Output (TOON): {len(output_content)} bytes', file=sys.stderr)
+                if len(input_content) > 0:
+                    print(f'Size reduction: {(1 - len(output_content) / len(input_content)) * 100:.1f}%',
+                          file=sys.stderr)
+
+                if input_tokens is not None and output_tokens is not None:
+                    print(f'Input tokens:  {input_tokens}', file=sys.stderr)
+                    print(f'Output tokens: {output_tokens}', file=sys.stderr)
+                    print(f'Token reduction: {(1 - output_tokens / input_tokens) * 100:.1f}%',
+                          file=sys.stderr)
+                else:
+                    print('(Install tiktoken for token statistics)', file=sys.stderr)
+
+                print('---', file=sys.stderr)
+
+            write_output(output_content, args.output)
+            return 0
+
+        except Exception as e:
+            print(f'Error: {e}', file=sys.stderr)
+            return 1
+
+    # Handle Croissant metadata parsing
+    if args.croissant:
+        if not KAGGLE_AVAILABLE:
+            print('Error: Croissant support requires the kaggle module.', file=sys.stderr)
+            return 1
+
+        try:
+            input_content = read_input(args.input)
+            metadata = json.loads(input_content)
+            info = parse_croissant(metadata)
+            output_content = croissant_to_summary(info)
+
+            print(f'Dataset: {info["name"]}', file=sys.stderr)
+            print(f'Files: {[f["name"] for f in info["files"]]}', file=sys.stderr)
+
+            write_output(output_content, args.output)
+            return 0
+
+        except Exception as e:
+            print(f'Error parsing Croissant metadata: {e}', file=sys.stderr)
+            return 1
+
     try:
         # Read input
         input_content = read_input(args.input)
