@@ -120,7 +120,7 @@ def _encode_value(value: Any, level: int, opts: EncoderOptions) -> str:
     elif isinstance(value, tuple):
         return _encode_tuple(value)
     else:
-        # Handle other types as null
+        # Handle other types with NotImplementedError
         raise NotImplementedError(f'Encoding for type {type(value)} is not implemented.')
 
 
