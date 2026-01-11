@@ -184,7 +184,7 @@ def _encode_tuple(value: tuple) -> str:
     if not value:
         return '[]'
     
-    tuple_data = ','.join(str(v) for v in value)
+    tuple_data = ','.join(_encode_primitive_value(v) for v in value)
     tuple_string = f'[{tuple_data}]'
 
     return tuple_string
