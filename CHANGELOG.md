@@ -1,3 +1,10 @@
+## [1.6.0](https://github.com/ScrapeGraphAI/toonify/compare/v1.5.1...v1.6.0) (2026-02-06)
+
+
+### Features
+
+* **cli:** add Kaggle dataset integration and Croissant metadata parsing ([3aa1f78](https://github.com/ScrapeGraphAI/toonify/commit/3aa1f786810e77629d70c51dff2bbad829f9312d))
+
 ## [1.5.1](https://github.com/ScrapeGraphAI/toonify/compare/v1.5.0...v1.5.1) (2025-11-26)
 
 
