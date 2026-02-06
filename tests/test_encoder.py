@@ -88,6 +88,17 @@ def test_encode_primitive_array():
     result = encode(data)
     assert result == 'items: [hello,"world, test",foo]'
 
+def test_encode_tuple_array():
+    """Test encoding of primitive arrays."""
+    # Number tuple
+    assert encode({'numbers': (1, 2, 3)}) == 'numbers: [1,2,3]'
+    
+    # String tuple
+    assert encode({'names': ('Alice', 'Bob')}) == 'names: [Alice,Bob]'
+    
+    # Mixed primitive tuple
+    assert encode({'mixed': (1, 'text', True, None)}) == 'mixed: [1,text,true,null]'
+
 
 def test_encode_array_delimiter():
     """Test different array delimiters."""

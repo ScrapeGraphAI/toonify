@@ -117,9 +117,11 @@ def _encode_value(value: Any, level: int, opts: EncoderOptions) -> str:
         return _encode_array(value, level, opts)
     elif isinstance(value, dict):
         return _encode_object(value, level, opts)
+    elif isinstance(value, tuple):
+        return _encode_tuple(value)
     else:
-        # Handle other types as null
-        return 'null'
+        # Handle other types with NotImplementedError
+        raise NotImplementedError(f'Encoding for type {type(value)} is not implemented.')
 
 
 def _encode_object(obj: dict, level: int, opts: EncoderOptions) -> str:
@@ -176,6 +178,16 @@ def _encode_array(arr: list, level: int, opts: EncoderOptions) -> str:
     
     # Mixed array (list format)
     return _encode_list_array(arr, level, opts, key=None)
+
+def _encode_tuple(value: tuple) -> str:
+    """Encode a tuple."""
+    if not value:
+        return '[]'
+    
+    tuple_data = ','.join(_encode_primitive_value(v) for v in value)
+    tuple_string = f'[{tuple_data}]'
+
+    return tuple_string
 
 
 def _encode_array_with_key(key: str, arr: list, level: int, opts: EncoderOptions) -> str:
